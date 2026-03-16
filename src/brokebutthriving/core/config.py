@@ -11,9 +11,11 @@ class Settings(BaseSettings):
     api_prefix: str = "/api/v1"
     database_url: str = f"sqlite:///{PROJECT_ROOT / 'data' / 'bbt.db'}"
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    artifacts_root: Path = PROJECT_ROOT / "artifacts"
+    public_benchmark_runs_root: Path = artifacts_root / "public-benchmark-runs"
+    sequence_runs_root: Path = artifacts_root / "sequence-runs"
 
     model_config = SettingsConfigDict(env_prefix="BBT_", env_file=".env", extra="ignore")
 
 
 settings = Settings()
-

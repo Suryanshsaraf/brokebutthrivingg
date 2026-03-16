@@ -2,6 +2,7 @@ import type {
   CashflowEntry,
   DashboardSummary,
   ExpenseEntry,
+  ModelRegistrySummary,
   Participant,
   SimulationResponse,
 } from '../types/api'
@@ -63,10 +64,10 @@ export const api = {
     }),
   getDashboard: (participantId: string) =>
     request<DashboardSummary>(`/participants/${participantId}/dashboard`),
+  getModelRegistry: () => request<ModelRegistrySummary>('/models/registry'),
   simulate: (participantId: string, payload: Record<string, unknown>) =>
     request<SimulationResponse>(`/participants/${participantId}/simulate`, {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
 }
-

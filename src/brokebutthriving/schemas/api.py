@@ -158,3 +158,60 @@ class DailyDatasetRecord(BaseModel):
     spend_next_7d: float
     primary_archetype: str | None
 
+
+class ModelMetricSummary(BaseModel):
+    model_id: str
+    model_label: str
+    primary_metric_name: str
+    primary_metric_value: float
+    metrics: dict[str, float]
+    is_best: bool = False
+
+
+class ModelFeatureGroup(BaseModel):
+    name: str
+    features: list[str]
+
+
+class SubgroupEvaluationSummary(BaseModel):
+    label: str
+    row_count: int
+    group_count: int
+    best_model: str | None = None
+    primary_metric_name: str | None = None
+    primary_metric_value: float | None = None
+
+
+class TrainedModelTask(BaseModel):
+    task_id: str
+    title: str
+    family: str
+    task_type: str
+    benchmark_file: str | None = None
+    run_id: str
+    note: str
+    dataset_sources: list[str]
+    row_count: int
+    split_counts: dict[str, int]
+    feature_count: int
+    auxiliary_feature_count: int | None = None
+    auxiliary_feature_label: str | None = None
+    positive_class_rate: float | None = None
+    best_model: str
+    primary_metric_name: str
+    primary_metric_value: float
+    highlight: str
+    feature_summary: str
+    feature_groups: list[ModelFeatureGroup]
+    metrics: list[ModelMetricSummary]
+    subgroup_evaluation: SubgroupEvaluationSummary | None = None
+
+
+class ModelRegistrySummary(BaseModel):
+    public_benchmark_run_id: str | None = None
+    sequence_run_id: str | None = None
+    total_trained_tasks: int
+    available_families: list[str]
+    note: str
+    missing_artifacts: list[str]
+    tasks: list[TrainedModelTask]

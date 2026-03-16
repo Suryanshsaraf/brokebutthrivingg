@@ -64,6 +64,20 @@ The public benchmark trainer produces report-ready metrics, grouped respondent s
 
 The BLS sequence trainer produces grouped panel splits, baseline comparisons, a real LSTM checkpoint, prediction exports, and proxy young-adult/student subgroup metrics for next-quarter spend forecasting and high-burn risk.
 
+### Model intelligence dashboard
+
+The backend now exposes a trained-model registry at `GET /api/v1/models/registry`.
+
+It reads the latest saved public benchmark run and the latest saved BLS sequence run, then returns:
+
+- task-level metric leaderboards
+- train/validation/test row counts
+- main feature groups used by each trained task
+- student or young-adult subgroup evaluation summaries
+- notes that distinguish honest offline benchmarks from live personalized app scoring
+
+The React dashboard consumes this endpoint and renders the trained-model cards directly beside the student workspace so the project can show real benchmark evidence without pretending the public models are already personalized to local student logs.
+
 ### Public datasets
 
 ```bash
