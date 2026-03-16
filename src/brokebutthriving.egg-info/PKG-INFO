@@ -1,0 +1,85 @@
+Metadata-Version: 2.4
+Name: brokebutthriving
+Version: 0.1.0
+Summary: Student finance copilot with real data collection and multi-task sequence modeling.
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi<1,>=0.115
+Requires-Dist: uvicorn[standard]<1,>=0.34
+Requires-Dist: sqlmodel<1,>=0.0.22
+Requires-Dist: pydantic-settings<3,>=2.7
+Requires-Dist: python-dateutil<3,>=2.9
+Requires-Dist: pandas<3,>=2.2
+Requires-Dist: numpy<3,>=2.1
+Requires-Dist: scikit-learn<2,>=1.5
+Requires-Dist: torch<3,>=2.6
+Provides-Extra: dev
+Requires-Dist: httpx<1,>=0.28; extra == "dev"
+Requires-Dist: pytest<9,>=8.3; extra == "dev"
+Requires-Dist: ruff<1,>=0.11; extra == "dev"
+
+# BrokeButThriving
+
+An end-to-end student finance copilot built for real data collection, model training, and interactive decision support.
+
+## What this repository contains
+
+- `src/brokebutthriving/api`: FastAPI backend for participant onboarding, expense logging, check-ins, simulation, and dataset export.
+- `src/brokebutthriving/ml`: feature engineering, sequence dataset generation, and multi-task model training code.
+- `frontend`: React + Vite interface for collecting real student data and visualizing finance insights.
+- `data`: local SQLite storage for pilot data collection.
+- `artifacts`: trained model outputs and exported datasets.
+
+## Project direction
+
+The system is intentionally built around real data:
+
+1. onboard students with budget and living-context metadata
+2. collect expenses, cash inflows, and daily emotional/context signals
+3. build training-ready time-series datasets
+4. train a multi-task model for archetype tendency, financial-risk forecasting, and spend forecasting
+5. surface personalized what-if simulations and interventions in the UI
+
+## Local development
+
+### Backend
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+bbt-api
+```
+
+The API starts on `http://127.0.0.1:8000` by default.
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend expects the backend at `http://127.0.0.1:8000/api/v1`. Override it with `VITE_API_BASE_URL`.
+
+### Training
+
+```bash
+source .venv/bin/activate
+bbt-fetch-public-data --list
+bbt-export --db-path data/bbt.db --output artifacts/daily_dataset.csv
+bbt-train --db-path data/bbt.db --output-dir artifacts/run-001
+```
+
+Training only uses collected data from the local SQLite database. No synthetic values are injected into the training pipeline.
+
+### Public datasets
+
+```bash
+source .venv/bin/activate
+bbt-fetch-public-data --list
+bbt-fetch-public-data --dataset cfpb_fwb
+```
+
+The public-data downloader fetches official finance datasets that are script-downloadable and flags sources that still require manual acquisition, such as BLS CE PUMD and NCES NPSAS.

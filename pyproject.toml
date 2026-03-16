@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "brokebutthriving"
+version = "0.1.0"
+description = "Student finance copilot with real data collection and multi-task sequence modeling."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.34,<1",
+  "sqlmodel>=0.0.22,<1",
+  "pydantic-settings>=2.7,<3",
+  "python-dateutil>=2.9,<3",
+  "pandas>=2.2,<3",
+  "numpy>=2.1,<3",
+  "scikit-learn>=1.5,<2",
+  "torch>=2.6,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.28,<1",
+  "pytest>=8.3,<9",
+  "ruff>=0.11,<1",
+]
+
+[project.scripts]
+bbt-api = "brokebutthriving.api.main:run"
+bbt-export = "brokebutthriving.ml.export:main"
+bbt-fetch-public-data = "brokebutthriving.ml.public_data:main"
+bbt-ingest-shed = "brokebutthriving.ml.ingest_shed:main"
+bbt-train = "brokebutthriving.ml.train:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
