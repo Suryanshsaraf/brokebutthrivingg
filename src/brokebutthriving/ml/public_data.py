@@ -4,7 +4,8 @@ import argparse
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from urllib.request import Request, urlopen
+
+import requests
 
 
 @dataclass(frozen=True)
@@ -104,12 +105,17 @@ SOURCE_REGISTRY: dict[str, DatasetSource] = {
             ),
         ),
     ),
-    "bls_cex_manual": DatasetSource(
-        name="bls_cex_manual",
-        description="BLS Consumer Expenditure Survey PUMD. Manual acquisition is recommended because the BLS site is anti-bot and serves year-specific interview and diary files.",
+    "bls_cex_interview_recent": DatasetSource(
+        name="bls_cex_interview_recent",
+        description="BLS Consumer Expenditure Survey Interview PUMD CSV ZIP files for 2021-2024.",
         source_page="https://www.bls.gov/cex/pumd.htm",
-        assets=(),
-        access="manual_download",
+        assets=tuple(
+            DatasetAsset(
+                filename=f"intrvw{yy}.zip",
+                url=f"https://www.bls.gov/cex/pumd/data/csv/intrvw{yy}.zip",
+            )
+            for yy in ("21", "22", "23", "24")
+        ),
     ),
     "nces_npsas_manual": DatasetSource(
         name="nces_npsas_manual",
@@ -126,15 +132,19 @@ def _download_asset(asset: DatasetAsset, target_dir: Path) -> Path:
     destination = target_dir / asset.filename
     if destination.exists():
         return destination
-    request = Request(
-        asset.url,
-        headers={
-            "User-Agent": "Mozilla/5.0 (compatible; BrokeButThriving/0.1; +https://example.invalid)",
-            "Accept": "*/*",
-        },
-    )
-    with urlopen(request) as response, destination.open("wb") as handle:
-        handle.write(response.read())
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+        "Referer": "https://www.bls.gov/cex/pumd.htm",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+    with requests.get(asset.url, headers=headers, timeout=300, stream=True) as response:
+        response.raise_for_status()
+        with destination.open("wb") as handle:
+            for chunk in response.iter_content(chunk_size=1024 * 1024):
+                if chunk:
+                    handle.write(chunk)
     return destination
 
 

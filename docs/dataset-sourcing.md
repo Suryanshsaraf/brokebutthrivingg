@@ -201,15 +201,44 @@ The final project can honestly claim:
 - real financial-risk evaluation using public microdata and survey labels
 - student-oriented adaptation through subgrouping, label design, and interface goals
 
-## Next implementation step
+## Current implementation status
 
-Build ingestion in this order:
+Completed in the repo:
 
 1. SHED downloader and schema mapper
 2. CFPB MEM downloader and schema mapper
-3. CFPB Financial Well-Being downloader and calibration mapper
-4. BLS CE ingestion and category harmonization
-5. unified training tables for:
-   - expenditure sequences
-   - hardship labels
-   - well-being labels
+3. CFPB Financial Well-Being downloader and schema mapper
+4. BLS CE interview downloader and quarterly schema mapper
+5. BLS CE spend-sequence benchmark builder
+6. unified benchmark builders for:
+   - well-being regression
+   - hardship classification
+   - future bill-difficulty risk
+   - student-coded subset analysis
+7. BLS sequence benchmark trainer with:
+   - next-quarter spend regression
+   - next-quarter high-burn classification
+
+Current output sizes:
+
+- `fed_shed_normalized.csv`: `117,102` rows
+- `cfpb_mem_normalized.csv`: `21,839` rows
+- `cfpb_fwb_normalized.csv`: `6,394` rows
+- `bls_cex_interview_quarterly.csv`: `76,946` rows
+- `public_finance_master.csv`: `145,335` rows
+- `public_wellbeing_benchmark.csv`: `27,103` rows
+- `public_hardship_benchmark.csv`: `128,912` rows
+- `public_future_difficulty_benchmark.csv`: `4,657` rows
+- `public_student_finance_rows.csv`: `6,389` rows
+- `bls_cex_spend_sequence_benchmark.csv`: `21,400` rows
+
+## Next implementation step
+
+Deepen the expenditure side of the stack:
+
+1. optional diary-file ingestion for weekly spend granularity
+2. richer category harmonization from lower-level expenditure tables beyond FMLI summaries
+3. sequence models that combine:
+   - BLS expenditure histories
+   - public hardship labels where compatible
+   - subgroup analysis for younger/student-like households

@@ -6,6 +6,7 @@ python-dateutil<3,>=2.9
 pandas<3,>=2.2
 numpy<3,>=2.1
 scikit-learn<2,>=1.5
+requests<3,>=2.32
 torch<3,>=2.6
 
 [dev]
