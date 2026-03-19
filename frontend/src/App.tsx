@@ -8,6 +8,7 @@ import ChatPage from './pages/ChatPage';
 import SettingsPage from './pages/SettingsPage';
 import OnboardingPage from './pages/OnboardingPage';
 import Galaxy from './components/Galaxy/Galaxy';
+import Dock from './components/Dock/Dock';
 import './index.css';
 
 /* ============================================================
@@ -29,6 +30,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [page, setPage] = useState<PageId>('dashboard');
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showParticipantOverlay, setShowParticipantOverlay] = useState(false);
 
   useEffect(() => {
     listParticipants()
@@ -73,52 +75,6 @@ export default function App() {
       <div className="galaxy-background">
         <Galaxy />
       </div>
-      {/* Sidebar */}
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <div className="sidebar-brand-icon">💰</div>
-          <div>
-            <h1>BrokeButThriving</h1>
-            <small>Student Finance Copilot</small>
-          </div>
-        </div>
-
-        <nav className="sidebar-nav">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              className={`nav-link ${page === item.id ? 'active' : ''}`}
-              onClick={() => setPage(item.id)}
-              type="button"
-            >
-              <span className="nav-icon">{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="sidebar-participant">
-          <label>Participant</label>
-          <select
-            value={selectedId ?? ''}
-            onChange={(e) => handleSelectParticipant(e.target.value)}
-          >
-            {participants.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.first_name || p.participant_code} — ₹{p.monthly_budget}
-              </option>
-            ))}
-          </select>
-          <button
-            className="btn btn-secondary btn-sm"
-            style={{ marginTop: 10, width: '100%' }}
-            onClick={() => setShowOnboarding(true)}
-            type="button"
-          >
-            + New Participant
-          </button>
-        </div>
-      </aside>
 
       {/* Main content */}
       <main className="main-content">
@@ -128,6 +84,51 @@ export default function App() {
         {page === 'chat' && <ChatPage participantId={selectedId} />}
         {page === 'settings' && <SettingsPage participantId={selectedId} />}
       </main>
+
+      {/* Floating Dock */}
+      <Dock 
+        items={NAV_ITEMS} 
+        activeId={page} 
+        onSelect={(id) => setPage(id)} 
+        onParticipantClick={() => setShowParticipantOverlay(!showParticipantOverlay)}
+      />
+
+      {/* Participant Switcher Overlay */}
+      {showParticipantOverlay && (
+        <div className="participant-overlay" onClick={() => setShowParticipantOverlay(false)}>
+          <div className="participant-card" onClick={(e) => e.stopPropagation()}>
+            <h3>Switch Participant</h3>
+            <div className="participant-list">
+              {participants.map((p) => (
+                <button
+                  key={p.id}
+                  className={`participant-item ${selectedId === p.id ? 'active' : ''}`}
+                  onClick={() => {
+                    handleSelectParticipant(p.id);
+                    setShowParticipantOverlay(false);
+                  }}
+                >
+                  <div className="p-avatar">{p.first_name?.[0] || '👤'}</div>
+                  <div className="p-info">
+                    <span className="p-name">{p.first_name || p.participant_code}</span>
+                    <span className="p-budget">Budget: ₹{p.monthly_budget}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <button
+              className="btn btn-secondary"
+              style={{ marginTop: 16, width: '100%' }}
+              onClick={() => {
+                setShowOnboarding(true);
+                setShowParticipantOverlay(false);
+              }}
+            >
+              + New Participant
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
