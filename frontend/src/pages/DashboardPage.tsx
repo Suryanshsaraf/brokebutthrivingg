@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type {
   AlertItem, DashboardSummary, ExpenseEntryRead, CashflowEntryRead,
   GamificationSummary,
@@ -6,6 +6,15 @@ import type {
 import {
   getDashboard, getAlerts, listExpenses, listCashflows, getGamification,
 } from '../lib/api';
+import { MagicBento, BentoCard } from '../components/MagicBento/MagicBento';
+import { LogoLoop } from '../components/LogoLoop/LogoLoop';
+import { 
+  FaReact, FaPython, FaDatabase 
+} from 'react-icons/fa';
+import { 
+  SiFastapi, SiSqlite, SiGooglecloud, SiVite, SiTypescript 
+} from 'react-icons/si';
+import './DashboardPage.css';
 
 /* ============================================================
    Dashboard Page — budget ring, metrics, alerts, recent activity
@@ -51,45 +60,67 @@ export default function DashboardPage({ participantId }: Props) {
     pct >= 80 ? '#f5a65b' :
     pct >= 60 ? '#f5d05b' : '#5cd6a0';
 
+  const techStack = [
+    { icon: <FaReact style={{ color: '#61DAFB' }} />, text: 'React 19' },
+    { icon: <SiTypescript style={{ color: '#3178C6' }} />, text: 'TypeScript' },
+    { icon: <SiVite style={{ color: '#646CFF' }} />, text: 'Vite' },
+    { icon: <SiFastapi style={{ color: '#05998B' }} />, text: 'FastAPI' },
+    { icon: <FaPython style={{ color: '#3776AB' }} />, text: 'Python 3.12' },
+    { icon: <SiSqlite style={{ color: '#003B57' }} />, text: 'SQLModel' },
+    { icon: <FaDatabase style={{ color: '#336791' }} />, text: 'PostgreSQL' },
+    { icon: <SiGooglecloud style={{ color: '#4285F4' }} />, text: 'Google Gemini' },
+  ];
+
+  const categories = [
+    { icon: '🏠', text: 'Rent' },
+    { icon: '🍔', text: 'Food' },
+    { icon: '🚗', text: 'Travel' },
+    { icon: '⚡', text: 'Utilities' },
+    { icon: '🎮', text: 'Fun' },
+    { icon: '🏥', text: 'Health' },
+    { icon: '🛍️', text: 'Shopping' },
+  ];
+
   return (
-    <div>
+    <div className="dashboard-container">
       <div className="page-header">
         <h2>Dashboard</h2>
         <p>Your financial overview at a glance</p>
       </div>
 
-      {/* Top metrics */}
-      <div className="grid-4" style={{ marginBottom: 24 }}>
-        <div className="metric-card">
-          <div className="metric-label">Current Balance</div>
-          <div className="metric-value" style={{ color: (dashboard?.current_balance ?? 0) >= 0 ? '#5cd6a0' : '#f5695b' }}>
+      <MagicBento>
+        {/* Row 1: Key Metrics */}
+        <BentoCard title="Current Balance" span="small">
+          <div className="metric-value big" style={{ color: (dashboard?.current_balance ?? 0) >= 0 ? '#5cd6a0' : '#f5695b' }}>
             ₹{dashboard?.current_balance.toFixed(0) ?? '0'}
           </div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-label">14-Day Avg Burn</div>
-          <div className="metric-value">₹{dashboard?.average_daily_spend_14d.toFixed(0) ?? '0'}</div>
-          <div className="metric-subtitle">per day</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-label">Month Spend</div>
-          <div className="metric-value">₹{dashboard?.current_month_spend.toFixed(0) ?? '0'}</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-label">Risk Score</div>
+        </BentoCard>
+
+        <BentoCard title="Performance" subtitle="14-Day Average & Monthly Spend" span="medium">
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
+            <div>
+              <div className="metric-value">₹{dashboard?.average_daily_spend_14d.toFixed(0) ?? '0'}</div>
+              <div className="metric-subtitle">Avg Burn / Day</div>
+            </div>
+            <div>
+              <div className="metric-value">₹{dashboard?.current_month_spend.toFixed(0) ?? '0'}</div>
+              <div className="metric-subtitle">This Month</div>
+            </div>
+          </div>
+        </BentoCard>
+
+        <BentoCard title="Risk Score" span="small">
           <div className="metric-value">{dashboard ? Math.round(dashboard.risk_score * 100) : 0}%</div>
           {dashboard && (
-            <span className={`risk-badge risk-${dashboard.risk_band}`} style={{ marginTop: 6 }}>
+            <span className={`risk-badge risk-${dashboard.risk_band}`} style={{ marginTop: 6, display: 'inline-block' }}>
               {dashboard.risk_band}
             </span>
           )}
-        </div>
-      </div>
+        </BentoCard>
 
-      <div className="grid-2" style={{ marginBottom: 24 }}>
-        {/* Budget ring */}
-        <div className="glass-panel" style={{ display: 'flex', justifyContent: 'center' }}>
-          <div className="budget-ring-container">
+        {/* Row 2: Visual Insights */}
+        <BentoCard title="Budget Health" span="large">
+          <div className="budget-ring-container bento-center">
             <div className="budget-ring-wrapper">
               <svg className="budget-ring-svg" width="180" height="180" viewBox="0 0 180 180">
                 <circle className="budget-ring-bg" cx="90" cy="90" r={radius} />
@@ -103,131 +134,89 @@ export default function DashboardPage({ participantId }: Props) {
               </svg>
               <div className="budget-ring-center">
                 <div className="budget-ring-pct" style={{ color: ringColor }}>{pct.toFixed(0)}%</div>
-                <div className="budget-ring-label">Budget used</div>
+                <div className="budget-ring-label">Used</div>
               </div>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
-                ₹{dashboard?.current_month_spend.toFixed(0) ?? '0'} / ₹{dashboard?.monthly_budget.toFixed(0) ?? '0'}
-              </div>
-              <div style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 4 }}>
+              <div style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
                 ₹{dashboard?.budget_remaining.toFixed(0) ?? '0'} remaining
               </div>
             </div>
           </div>
-        </div>
+        </BentoCard>
 
-        {/* Alerts */}
-        <div className="glass-panel">
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>🔔 Smart Alerts</h3>
-          <div className="stack" style={{ gap: 10 }}>
-            {alerts.map((a) => (
-              <div key={a.id} className={`alert-card alert-${a.severity}`}>
-                <span className="alert-icon">{a.icon}</span>
+        <BentoCard title="Smart Alerts" span="tall">
+          <div className="stack" style={{ gap: 12 }}>
+            {alerts.length > 0 ? alerts.map((a) => (
+              <div key={a.id} className={`alert-card alert-${a.severity}`} style={{ padding: '12px' }}>
+                <span className="alert-icon" style={{ fontSize: '16px' }}>{a.icon}</span>
                 <div className="alert-body">
-                  <h4>{a.title}</h4>
-                  <p>{a.message}</p>
+                  <h4 style={{ fontSize: '13px' }}>{a.title}</h4>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid-2" style={{ marginBottom: 24 }}>
-        {/* Highlights */}
-        <div className="glass-panel">
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>💡 Insights</h3>
-          <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {dashboard?.highlight_messages.map((m, i) => (
-              <li key={i} style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                • {m}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Top categories */}
-        <div className="glass-panel">
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>📊 Spend Mix</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {dashboard?.top_categories.map((cat) => (
-              <div key={cat.category}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
-                  <strong style={{ textTransform: 'capitalize' }}>{cat.category}</strong>
-                  <span style={{ color: 'var(--text-secondary)' }}>₹{cat.total_spend.toFixed(0)}</span>
-                </div>
-                <div style={{ height: 6, borderRadius: 3, background: 'var(--bg-input)', overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%', borderRadius: 3,
-                    background: 'var(--gradient-accent)',
-                    width: `${Math.max(5, cat.share_of_spend * 100)}%`,
-                    transition: 'width 0.8s ease',
-                  }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid-2">
-        {/* Gamification summary */}
-        <div className="glass-panel">
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>🏆 Achievements</h3>
-          {gamification && gamification.achievements.length > 0 ? (
-            <div className="badge-grid">
-              {gamification.achievements.map((a) => (
-                <div key={a.id} className="achievement-badge">
-                  <span className="badge-icon">{a.icon}</span>
-                  <div className="badge-info">
-                    <h4>{a.title}</h4>
-                    <p>{a.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p style={{ color: 'var(--text-tertiary)', fontSize: 14 }}>
-              Keep logging to earn your first badge! 🔥 {gamification ? `${gamification.no_spend_streak}-day no-spend streak` : ''}
-            </p>
-          )}
-          {gamification && (
-            <div className="grid-2" style={{ marginTop: 12, gap: 10 }}>
-              <div className="metric-card" style={{ padding: 14 }}>
-                <div className="metric-label" style={{ fontSize: 11 }}>No-Spend Streak</div>
-                <div className="metric-value" style={{ fontSize: 22 }}>{gamification.no_spend_streak} 🔥</div>
-              </div>
-              <div className="metric-card" style={{ padding: 14 }}>
-                <div className="metric-label" style={{ fontSize: 11 }}>Under Budget Days</div>
-                <div className="metric-value" style={{ fontSize: 22 }}>{gamification.under_budget_days} 🏆</div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Recent activity */}
-        <div className="glass-panel">
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>📝 Recent Activity</h3>
-          <div className="stack" style={{ gap: 8 }}>
-            {expenses.slice(0, 5).map((e) => (
-              <div key={e.id} className="timeline-item">
-                <strong>{e.category}</strong>
-                <span>₹{e.amount.toFixed(0)} · {new Date(e.occurred_at).toLocaleDateString()}</span>
-              </div>
-            ))}
-            {cashflows.slice(0, 3).map((c) => (
-              <div key={c.id} className="timeline-item cashflow-item">
-                <strong>{c.category}</strong>
-                <span>+₹{c.amount.toFixed(0)} · {new Date(c.occurred_at).toLocaleDateString()}</span>
-              </div>
-            ))}
-            {expenses.length === 0 && cashflows.length === 0 && (
-              <p style={{ color: 'var(--text-tertiary)', fontSize: 14 }}>No records yet. Start logging!</p>
+            )) : (
+              <p style={{ opacity: 0.4, fontSize: '13px' }}>No active alerts. You're doing great!</p>
             )}
           </div>
-        </div>
-      </div>
+        </BentoCard>
+
+        <BentoCard title="Spend Mix" span="tall">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {dashboard?.top_categories.slice(0, 4).map((cat) => (
+              <div key={cat.category}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+                  <strong style={{ textTransform: 'capitalize' }}>{cat.category}</strong>
+                  <span style={{ opacity: 0.6 }}>₹{cat.total_spend.toFixed(0)}</span>
+                </div>
+                <div className="progress-bar-subtle">
+                  <div className="progress-fill" style={{ width: `${Math.max(5, cat.share_of_spend * 100)}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </BentoCard>
+
+        {/* Row 3: Insights & Achievements */}
+        <BentoCard title="AI Copilot Insights" span="medium">
+          <ul className="insights-list">
+            {dashboard?.highlight_messages.slice(0, 3).map((m, i) => (
+              <li key={i}>{m}</li>
+            ))}
+          </ul>
+        </BentoCard>
+
+        <BentoCard title="Achievements" span="medium">
+          {gamification && (
+            <div style={{ display: 'flex', gap: 20, alignItems: 'center', height: '100%' }}>
+              <div className="p-avatar big" style={{ width: 60, height: 60, fontSize: '2rem' }}>
+                {gamification.no_spend_streak > 3 ? '🔥' : '🏆'}
+              </div>
+              <div>
+                <div className="metric-value small">{gamification.no_spend_streak} Day Streak</div>
+                <div className="metric-subtitle">{gamification.under_budget_days} Days Under Budget</div>
+              </div>
+            </div>
+          )}
+        </BentoCard>
+
+        {/* Row 4: Timeline */}
+        <BentoCard title="Recent Activity" span="full">
+          <div className="horizontal-timeline">
+            {[...expenses.slice(0, 3), ...cashflows.slice(0, 2)].map((item: any, idx) => (
+              <div key={idx} className={`timeline-capsule ${'amount' in item && 'participant_id' in item ? '' : 'cashflow'}`}>
+                <strong>{item.category}</strong>
+                <span>₹{item.amount.toFixed(0)}</span>
+              </div>
+            ))}
+          </div>
+        </BentoCard>
+      </MagicBento>
+
+      {/* Corporate/Tech Showcase */}
+      <footer className="dashboard-footer">
+        <LogoLoop items={techStack} title="Built With Cutting Edge Tech" speed={30} />
+        <LogoLoop items={categories} title="Support for all categories" direction="right" speed={40} />
+      </footer>
     </div>
   );
 }

@@ -1,0 +1,73 @@
+.logo-loop-container {
+  width: 100%;
+  padding: 40px 0;
+  position: relative;
+}
+
+.logo-loop-title {
+  text-align: center;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  opacity: 0.4;
+  margin-bottom: 24px;
+}
+
+.logo-loop-wrapper {
+  mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+}
+
+.logo-loop-track {
+  display: flex;
+  width: max-content;
+  gap: 40px;
+  animation: loop var(--speed) linear infinite;
+}
+
+.animate-loop-left {
+  animation-name: loop-left;
+}
+
+.animate-loop-right {
+  animation-name: loop-right;
+}
+
+.logo-loop-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.3s ease;
+}
+
+.logo-loop-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.logo-loop-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.logo-loop-text {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+@keyframes loop-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes loop-right {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
