@@ -11,6 +11,7 @@ from datetime import datetime, UTC
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from brokebutthriving.core.database import get_session
@@ -166,7 +167,14 @@ def create_checkin(
     _ensure_participant(session, participant_id)
     entry = DailyCheckIn(participant_id=participant_id, **payload.model_dump())
     session.add(entry)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail=f"Check-in already exists for {payload.check_in_date}. Only one check-in per day is allowed."
+        )
     session.refresh(entry)
     return DailyCheckInRead.model_validate(entry)
 

@@ -107,7 +107,17 @@ export default function LogPage({ participantId }: Props) {
       });
       setStatus('✅ Check-in saved!');
       setTimeout(() => setStatus(''), 3000);
-    } catch { setStatus('❌ Failed to save check-in'); }
+    } catch (err: any) {
+      console.error(err);
+      let msg = '❌ Failed to save check-in';
+      if (err.message && err.message.includes('{')) {
+        try {
+          const jsonBody = JSON.parse(err.message.split(': ')[1]);
+          if (jsonBody.detail) msg = `❌ ${jsonBody.detail}`;
+        } catch { /* fallback */ }
+      }
+      setStatus(msg);
+    }
   };
 
   const handleSms = async (e: React.FormEvent) => {
