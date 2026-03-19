@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from brokebutthriving.api.routes.chat import router as chat_router
 from brokebutthriving.api.routes.finance import router as finance_router
+from brokebutthriving.api.routes.gamification import router as gamification_router
 from brokebutthriving.api.routes.health import router as health_router
 from brokebutthriving.api.routes.models import router as models_router
 from brokebutthriving.api.routes.participants import router as participants_router
@@ -27,6 +29,8 @@ def create_app() -> FastAPI:
     app.include_router(models_router, prefix=settings.api_prefix)
     app.include_router(participants_router, prefix=settings.api_prefix)
     app.include_router(finance_router, prefix=settings.api_prefix)
+    app.include_router(gamification_router, prefix=settings.api_prefix)
+    app.include_router(chat_router, prefix=settings.api_prefix)
     return app
 
 

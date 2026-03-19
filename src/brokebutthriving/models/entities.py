@@ -107,6 +107,18 @@ class CashflowEntry(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utc_now)
 
 
+class RecurrenceFrequency(StrEnum):
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    MONTHLY = "monthly"
+
+
+class ChallengeStatus(StrEnum):
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    EXPIRED = "expired"
+
+
 class DailyCheckIn(SQLModel, table=True):
     __table_args__ = (UniqueConstraint("participant_id", "check_in_date", name="uq_daily_checkin"),)
 
@@ -122,4 +134,44 @@ class DailyCheckIn(SQLModel, table=True):
     sleep_hours: float | None = Field(default=None, ge=0, le=24)
     notes: str | None = Field(default=None, max_length=320)
     created_at: datetime = Field(default_factory=utc_now)
+
+
+class RecurringEntry(SQLModel, table=True):
+    id: str = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    participant_id: str = Field(foreign_key="participant.id", index=True)
+    amount: float = Field(gt=0)
+    category: ExpenseCategory = Field(default=ExpenseCategory.OTHER)
+    merchant: str | None = Field(default=None, max_length=120)
+    note: str | None = Field(default=None, max_length=240)
+    frequency: RecurrenceFrequency = Field(default=RecurrenceFrequency.MONTHLY)
+    is_expense: bool = Field(default=True)
+    is_active: bool = Field(default=True)
+    next_due: date = Field(index=True)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class Challenge(SQLModel, table=True):
+    id: str = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    participant_id: str = Field(foreign_key="participant.id", index=True)
+    title: str = Field(max_length=120)
+    description: str = Field(max_length=320)
+    challenge_type: str = Field(max_length=40)
+    target_value: float = Field(default=0)
+    current_value: float = Field(default=0)
+    status: ChallengeStatus = Field(default=ChallengeStatus.ACTIVE)
+    start_date: date = Field(default_factory=lambda: date.today())
+    end_date: date | None = Field(default=None)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class Achievement(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("participant_id", "badge_id", name="uq_achievement_badge"),)
+
+    id: str = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    participant_id: str = Field(foreign_key="participant.id", index=True)
+    badge_id: str = Field(max_length=60, index=True)
+    title: str = Field(max_length=120)
+    description: str = Field(max_length=240)
+    icon: str = Field(default="🏆", max_length=10)
+    earned_at: datetime = Field(default_factory=utc_now)
 

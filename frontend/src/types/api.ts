@@ -1,128 +1,289 @@
-export interface Participant {
-  id: string
-  participant_code: string
-  first_name: string | null
-  age: number | null
-  institution: string | null
-  course_name: string | null
-  country: string
-  timezone: string
-  living_situation: string
-  dietary_preference: string
-  monthly_budget: number
-  monthly_income: number
-  starting_balance: number
-  created_at: string
+/* TypeScript interfaces for all API types */
+
+// Enums
+export type ExpenseCategory =
+  | 'food' | 'transport' | 'entertainment' | 'shopping'
+  | 'education' | 'health' | 'utilities' | 'subscription'
+  | 'travel' | 'social' | 'emergency' | 'other';
+
+export type CashflowCategory =
+  | 'allowance' | 'part_time_job' | 'scholarship'
+  | 'freelance' | 'refund' | 'gift' | 'other';
+
+export type LivingSituation = 'hostel' | 'pg' | 'with_family' | 'rental' | 'other';
+export type DietPreference = 'veg' | 'non_veg' | 'vegan' | 'eggetarian' | 'other';
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly';
+export type ChallengeStatus = 'active' | 'completed' | 'expired';
+
+// Participant
+export interface ParticipantCreate {
+  participant_code: string;
+  first_name?: string;
+  age?: number;
+  institution?: string;
+  course_name?: string;
+  country?: string;
+  timezone?: string;
+  living_situation?: LivingSituation;
+  dietary_preference?: DietPreference;
+  monthly_budget: number;
+  monthly_income?: number;
+  starting_balance?: number;
 }
 
+export interface ParticipantRead extends ParticipantCreate {
+  id: string;
+  created_at: string;
+}
+
+// Survey
+export interface BehaviorSurveyCreate {
+  stress_spending_score: number;
+  social_pressure_score: number;
+  boredom_spending_score: number;
+  planning_confidence_score: number;
+  self_described_trigger?: string;
+}
+
+export interface BehaviorSurveyRead extends BehaviorSurveyCreate {
+  id: string;
+  participant_id: string;
+  created_at: string;
+}
+
+// Expense
+export interface ExpenseEntryCreate {
+  occurred_at: string;
+  amount: number;
+  category: ExpenseCategory;
+  merchant?: string;
+  note?: string;
+  is_social?: boolean;
+  is_essential?: boolean;
+  payment_mode?: string;
+  source?: string;
+}
+
+export interface ExpenseEntryRead extends ExpenseEntryCreate {
+  id: string;
+  participant_id: string;
+  created_at: string;
+}
+
+export interface ExpenseBatchCreate {
+  expenses: ExpenseEntryCreate[];
+}
+
+// Cashflow
+export interface CashflowEntryCreate {
+  occurred_at: string;
+  amount: number;
+  category?: CashflowCategory;
+  source?: string;
+  note?: string;
+}
+
+export interface CashflowEntryRead extends CashflowEntryCreate {
+  id: string;
+  participant_id: string;
+  created_at: string;
+}
+
+// Check-in
+export interface DailyCheckInCreate {
+  check_in_date: string;
+  opening_balance?: number;
+  closing_balance?: number;
+  stress_level: number;
+  exam_pressure: number;
+  social_pressure: number;
+  mood_energy: number;
+  sleep_hours?: number;
+  notes?: string;
+}
+
+export interface DailyCheckInRead extends DailyCheckInCreate {
+  id: string;
+  participant_id: string;
+  created_at: string;
+}
+
+// Dashboard
 export interface CategoryBreakdown {
-  category: string
-  total_spend: number
-  share_of_spend: number
+  category: string;
+  total_spend: number;
+  share_of_spend: number;
 }
 
 export interface DashboardSummary {
-  participant_id: string
-  current_balance: number
-  current_month_spend: number
-  current_month_inflow: number
-  average_daily_spend_14d: number
-  projected_days_remaining: number
-  risk_score: number
-  risk_band: string
-  top_categories: CategoryBreakdown[]
-  highlight_messages: string[]
+  participant_id: string;
+  current_balance: number;
+  current_month_spend: number;
+  current_month_inflow: number;
+  average_daily_spend_14d: number;
+  projected_days_remaining: number;
+  risk_score: number;
+  risk_band: string;
+  top_categories: CategoryBreakdown[];
+  highlight_messages: string[];
+  monthly_budget: number;
+  budget_used_pct: number;
+  budget_remaining: number;
+  budget_status: string;
 }
 
-export interface ExpenseEntry {
-  id: string
-  participant_id: string
-  occurred_at: string
-  amount: number
-  category: string
-  merchant: string | null
-  note: string | null
-  is_social: boolean
-  is_essential: boolean
-  payment_mode: string | null
-  source: string
-  created_at: string
-}
-
-export interface CashflowEntry {
-  id: string
-  participant_id: string
-  occurred_at: string
-  amount: number
-  category: string
-  source: string
-  note: string | null
-  created_at: string
+// Simulation
+export interface SimulationRequest {
+  lookback_days?: number;
+  horizon_days?: number;
+  category_adjustments?: Record<string, number>;
+  additional_income?: number;
 }
 
 export interface SimulationResponse {
-  baseline_end_balance: number
-  adjusted_end_balance: number
-  balance_delta: number
-  baseline_risk_score: number
-  adjusted_risk_score: number
-  key_takeaways: string[]
+  baseline_end_balance: number;
+  adjusted_end_balance: number;
+  balance_delta: number;
+  baseline_risk_score: number;
+  adjusted_risk_score: number;
+  key_takeaways: string[];
 }
 
-export interface ModelMetricSummary {
-  model_id: string
-  model_label: string
-  primary_metric_name: string
-  primary_metric_value: number
-  metrics: Record<string, number>
-  is_best: boolean
+// Alerts
+export interface AlertItem {
+  id: string;
+  severity: 'critical' | 'warning' | 'info' | 'success';
+  icon: string;
+  title: string;
+  message: string;
 }
 
-export interface ModelFeatureGroup {
-  name: string
-  features: string[]
+// Spending Trends
+export interface DailySpendPoint {
+  date: string;
+  amount: number;
 }
 
-export interface SubgroupEvaluationSummary {
-  label: string
-  row_count: number
-  group_count: number
-  best_model: string | null
-  primary_metric_name: string | null
-  primary_metric_value: number | null
+export interface SpendingTrendsResponse {
+  daily_spend: DailySpendPoint[];
+  weekly_totals: DailySpendPoint[];
+  category_totals: CategoryBreakdown[];
+  income_vs_expense: { week: string; income: number; expense: number }[];
 }
 
-export interface TrainedModelTask {
-  task_id: string
-  title: string
-  family: string
-  task_type: string
-  benchmark_file: string | null
-  run_id: string
-  note: string
-  dataset_sources: string[]
-  row_count: number
-  split_counts: Record<string, number>
-  feature_count: number
-  auxiliary_feature_count: number | null
-  auxiliary_feature_label: string | null
-  positive_class_rate: number | null
-  best_model: string
-  primary_metric_name: string
-  primary_metric_value: number
-  highlight: string
-  feature_summary: string
-  feature_groups: ModelFeatureGroup[]
-  metrics: ModelMetricSummary[]
-  subgroup_evaluation: SubgroupEvaluationSummary | null
+// Peer Comparison
+export interface PeerComparisonItem {
+  metric: string;
+  your_value: number;
+  peer_avg: number;
+  percentile: number;
+  interpretation: string;
 }
 
+export interface PeerComparisonResponse {
+  peer_count: number;
+  comparisons: PeerComparisonItem[];
+}
+
+// Recurring
+export interface RecurringEntryCreate {
+  amount: number;
+  category?: ExpenseCategory;
+  merchant?: string;
+  note?: string;
+  frequency?: RecurrenceFrequency;
+  is_expense?: boolean;
+  next_due: string;
+}
+
+export interface RecurringEntryRead extends RecurringEntryCreate {
+  id: string;
+  participant_id: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+// Gamification
+export interface ChallengeRead {
+  id: string;
+  participant_id: string;
+  title: string;
+  description: string;
+  challenge_type: string;
+  target_value: number;
+  current_value: number;
+  progress_pct: number;
+  status: ChallengeStatus;
+  start_date: string;
+  end_date: string | null;
+}
+
+export interface AchievementRead {
+  id: string;
+  badge_id: string;
+  title: string;
+  description: string;
+  icon: string;
+  earned_at: string;
+}
+
+export interface GamificationSummary {
+  active_challenges: ChallengeRead[];
+  achievements: AchievementRead[];
+  no_spend_streak: number;
+  under_budget_days: number;
+}
+
+// Semester Projection
+export interface SemesterProjectionPoint {
+  date: string;
+  projected_balance: number;
+}
+
+export interface SemesterProjectionResponse {
+  current_balance: number;
+  projected_end_balance: number;
+  monthly_burn: number;
+  months_remaining: number;
+  projection_points: SemesterProjectionPoint[];
+  recommendations: string[];
+}
+
+// SMS Import
+export interface SmsImportRequest {
+  sms_text: string;
+}
+
+export interface SmsImportResponse {
+  parsed_count: number;
+  expenses: ExpenseEntryRead[];
+  errors: string[];
+}
+
+// Model Registry
 export interface ModelRegistrySummary {
-  public_benchmark_run_id: string | null
-  sequence_run_id: string | null
-  total_trained_tasks: number
-  available_families: string[]
-  note: string
-  missing_artifacts: string[]
-  tasks: TrainedModelTask[]
+  public_benchmark_run_id: string | null;
+  sequence_run_id: string | null;
+  total_trained_tasks: number;
+  available_families: string[];
+  note: string;
+  missing_artifacts: string[];
+  tasks: any[];
+}
+
+// Chat
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  tools_used?: string[];
+}
+
+export interface ChatRequest {
+  message: string;
+  history: { role: string; content: string }[];
+}
+
+export interface ChatResponse {
+  reply: string;
+  tools_used: string[];
 }

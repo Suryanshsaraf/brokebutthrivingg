@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     artifacts_root: Path = PROJECT_ROOT / "artifacts"
     public_benchmark_runs_root: Path = artifacts_root / "public-benchmark-runs"
     sequence_runs_root: Path = artifacts_root / "sequence-runs"
+    llm_api_key: str = ""
+    llm_base_url: str = "https://api.groq.com/openai/v1"
+    llm_model: str = "llama-3.3-70b-versatile"
 
     model_config = SettingsConfigDict(env_prefix="BBT_", env_file=".env", extra="ignore")
 

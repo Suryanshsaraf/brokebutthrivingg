@@ -15,3 +15,8 @@ data/external/*
 
 frontend/node_modules/
 frontend/dist/
+
+.env
+*.log
+data/*.db-journal
+node_modules/

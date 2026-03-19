@@ -8,6 +8,7 @@ numpy<3,>=2.1
 scikit-learn<2,>=1.5
 requests<3,>=2.32
 torch<3,>=2.6
+openai<2,>=1.0
 
 [dev]
 httpx<1,>=0.28

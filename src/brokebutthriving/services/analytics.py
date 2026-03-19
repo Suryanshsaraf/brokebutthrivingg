@@ -3,11 +3,24 @@ from __future__ import annotations
 from calendar import monthrange
 from collections import defaultdict
 from datetime import UTC, date, datetime, timedelta
+from uuid import uuid4
 
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from brokebutthriving.models.entities import CashflowEntry, DailyCheckIn, ExpenseEntry, Participant
-from brokebutthriving.schemas.api import CategoryBreakdown, DashboardSummary, SimulationRequest, SimulationResponse
+from brokebutthriving.schemas.api import (
+    AlertItem,
+    CategoryBreakdown,
+    DailySpendPoint,
+    DashboardSummary,
+    PeerComparisonItem,
+    PeerComparisonResponse,
+    SemesterProjectionPoint,
+    SemesterProjectionResponse,
+    SimulationRequest,
+    SimulationResponse,
+    SpendingTrendsResponse,
+)
 
 
 def _coerce_utc(dt: datetime) -> datetime:
@@ -132,6 +145,19 @@ def build_dashboard(session: Session, participant_id: str) -> DashboardSummary:
     if not highlights:
         highlights.append("Start logging a week of expenses and check-ins to unlock stronger behavior insights.")
 
+    # Budget tracking
+    monthly_budget = participant.monthly_budget
+    budget_used_pct = round((current_month_spend / monthly_budget) * 100, 1) if monthly_budget > 0 else 0
+    budget_remaining = round(monthly_budget - current_month_spend, 2)
+    if budget_used_pct >= 100:
+        budget_status = "over_budget"
+    elif budget_used_pct >= 80:
+        budget_status = "warning"
+    elif budget_used_pct >= 60:
+        budget_status = "caution"
+    else:
+        budget_status = "on_track"
+
     return DashboardSummary(
         participant_id=participant_id,
         current_balance=current_balance,
@@ -143,6 +169,10 @@ def build_dashboard(session: Session, participant_id: str) -> DashboardSummary:
         risk_band=risk_band,
         top_categories=top_categories,
         highlight_messages=highlights,
+        monthly_budget=monthly_budget,
+        budget_used_pct=budget_used_pct,
+        budget_remaining=budget_remaining,
+        budget_status=budget_status,
     )
 
 
@@ -201,3 +231,375 @@ def simulate_plan(session: Session, participant_id: str, request: SimulationRequ
         adjusted_risk_score=adjusted_risk,
         key_takeaways=takeaways,
     )
+
+
+# ---------------------------------------------------------------------------
+# Smart Alerts
+# ---------------------------------------------------------------------------
+
+def generate_alerts(session: Session, participant_id: str) -> list[AlertItem]:
+    """Rule-based alert engine generating actionable notifications."""
+    participant = session.get(Participant, participant_id)
+    if participant is None:
+        raise ValueError("Participant not found")
+
+    dashboard = build_dashboard(session, participant_id)
+    alerts: list[AlertItem] = []
+
+    # Budget alerts
+    if dashboard.budget_used_pct >= 100:
+        alerts.append(AlertItem(
+            id=uuid4().hex[:8], severity="critical", icon="🔴",
+            title="Over budget!",
+            message=f"You've spent Rs {dashboard.current_month_spend:.0f} against Rs {dashboard.monthly_budget:.0f} budget. Time to cut non-essentials.",
+        ))
+    elif dashboard.budget_used_pct >= 80:
+        alerts.append(AlertItem(
+            id=uuid4().hex[:8], severity="warning", icon="🟡",
+            title="Budget almost used up",
+            message=f"{dashboard.budget_used_pct:.0f}% of your budget is used with {dashboard.projected_days_remaining} days left this month.",
+        ))
+
+    # Risk alerts
+    if dashboard.risk_band == "critical":
+        alerts.append(AlertItem(
+            id=uuid4().hex[:8], severity="critical", icon="🚨",
+            title="High financial risk",
+            message="At your current burn rate, funds may run out before the month ends. Consider reducing discretionary spending.",
+        ))
+    elif dashboard.risk_band == "elevated":
+        alerts.append(AlertItem(
+            id=uuid4().hex[:8], severity="warning", icon="⚠️",
+            title="Elevated risk level",
+            message="Your spending pace is higher than your runway can comfortably support.",
+        ))
+
+    # Category spikes — compare last 7 days vs prior 7 days
+    now = datetime.now(UTC)
+    cutoff_7 = now - timedelta(days=7)
+    cutoff_14 = now - timedelta(days=14)
+    expenses = session.exec(
+        select(ExpenseEntry)
+        .where(ExpenseEntry.participant_id == participant_id)
+        .where(ExpenseEntry.occurred_at >= cutoff_14)
+    ).all()
+
+    recent_totals: dict[str, float] = defaultdict(float)
+    prior_totals: dict[str, float] = defaultdict(float)
+    for item in expenses:
+        dt = _coerce_utc(item.occurred_at)
+        if dt >= cutoff_7:
+            recent_totals[item.category.value] += item.amount
+        else:
+            prior_totals[item.category.value] += item.amount
+
+    for cat, recent_val in recent_totals.items():
+        prior_val = prior_totals.get(cat, 0)
+        if prior_val > 0 and recent_val > prior_val * 1.4:
+            pct_increase = int(((recent_val - prior_val) / prior_val) * 100)
+            alerts.append(AlertItem(
+                id=uuid4().hex[:8], severity="info", icon="📈",
+                title=f"{cat.title()} spending up {pct_increase}%",
+                message=f"Your {cat} spending this week (Rs {recent_val:.0f}) is {pct_increase}% higher than last week (Rs {prior_val:.0f}).",
+            ))
+
+    # Positive alerts
+    streak = compute_no_spend_streak(session, participant_id)
+    if streak >= 3:
+        alerts.append(AlertItem(
+            id=uuid4().hex[:8], severity="success", icon="🔥",
+            title=f"{streak}-day no-spend streak!",
+            message=f"Amazing! You've gone {streak} days without spending. Keep it up!",
+        ))
+
+    under_budget = compute_under_budget_days(session, participant_id)
+    if under_budget >= 5:
+        alerts.append(AlertItem(
+            id=uuid4().hex[:8], severity="success", icon="🏆",
+            title=f"Under budget for {under_budget} days",
+            message=f"Great discipline! You've stayed under your daily target for {under_budget} consecutive days.",
+        ))
+
+    if not alerts:
+        alerts.append(AlertItem(
+            id=uuid4().hex[:8], severity="info", icon="✨",
+            title="All looks good",
+            message="No alerts right now. Keep logging to stay on track!",
+        ))
+
+    return alerts
+
+
+# ---------------------------------------------------------------------------
+# Spending trends
+# ---------------------------------------------------------------------------
+
+def get_spending_trends(session: Session, participant_id: str, days: int = 30) -> SpendingTrendsResponse:
+    """Aggregated spending data for charts."""
+    participant = session.get(Participant, participant_id)
+    if participant is None:
+        raise ValueError("Participant not found")
+
+    cutoff = datetime.now(UTC) - timedelta(days=days)
+    expenses = session.exec(
+        select(ExpenseEntry)
+        .where(ExpenseEntry.participant_id == participant_id)
+        .where(ExpenseEntry.occurred_at >= cutoff)
+    ).all()
+    cashflows = session.exec(
+        select(CashflowEntry)
+        .where(CashflowEntry.participant_id == participant_id)
+        .where(CashflowEntry.occurred_at >= cutoff)
+    ).all()
+
+    # Daily spend
+    daily: dict[str, float] = defaultdict(float)
+    for item in expenses:
+        day_str = _coerce_utc(item.occurred_at).date().isoformat()
+        daily[day_str] += item.amount
+
+    today = date.today()
+    daily_spend: list[DailySpendPoint] = []
+    for i in range(days):
+        d = (today - timedelta(days=days - 1 - i)).isoformat()
+        daily_spend.append(DailySpendPoint(date=d, amount=round(daily.get(d, 0), 2)))
+
+    # Weekly totals
+    weekly: dict[str, float] = defaultdict(float)
+    for item in expenses:
+        dt = _coerce_utc(item.occurred_at).date()
+        week_start = (dt - timedelta(days=dt.weekday())).isoformat()
+        weekly[week_start] += item.amount
+
+    weekly_totals = [DailySpendPoint(date=k, amount=round(v, 2)) for k, v in sorted(weekly.items())]
+
+    # Category totals
+    cat_totals: dict[str, float] = defaultdict(float)
+    for item in expenses:
+        cat_totals[item.category.value] += item.amount
+    grand = sum(cat_totals.values())
+    category_totals = [
+        CategoryBreakdown(
+            category=cat,
+            total_spend=round(total, 2),
+            share_of_spend=round(total / grand, 3) if grand else 0,
+        )
+        for cat, total in sorted(cat_totals.items(), key=lambda x: x[1], reverse=True)
+    ]
+
+    # Income vs expense by week
+    weekly_income: dict[str, float] = defaultdict(float)
+    for item in cashflows:
+        dt = _coerce_utc(item.occurred_at).date()
+        week_start = (dt - timedelta(days=dt.weekday())).isoformat()
+        weekly_income[week_start] += item.amount
+
+    all_weeks = sorted(set(list(weekly.keys()) + list(weekly_income.keys())))
+    income_vs_expense = [
+        {"week": w, "income": round(weekly_income.get(w, 0), 2), "expense": round(weekly.get(w, 0), 2)}
+        for w in all_weeks
+    ]
+
+    return SpendingTrendsResponse(
+        daily_spend=daily_spend,
+        weekly_totals=weekly_totals,
+        category_totals=category_totals,
+        income_vs_expense=income_vs_expense,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Peer comparison
+# ---------------------------------------------------------------------------
+
+def get_peer_comparison(session: Session, participant_id: str) -> PeerComparisonResponse:
+    """Anonymized percentile comparison across all participants."""
+    participant = session.get(Participant, participant_id)
+    if participant is None:
+        raise ValueError("Participant not found")
+
+    all_participants = session.exec(select(Participant)).all()
+    peer_count = len(all_participants)
+    if peer_count < 2:
+        return PeerComparisonResponse(peer_count=peer_count, comparisons=[])
+
+    today = date.today()
+    start_of_month = _month_start(today)
+
+    # Compute monthly spend for each participant
+    user_spend = 0.0
+    monthly_spends: list[float] = []
+    monthly_budgets: list[float] = []
+    for p in all_participants:
+        expenses = session.exec(
+            select(ExpenseEntry).where(ExpenseEntry.participant_id == p.id)
+        ).all()
+        spend = sum(
+            item.amount for item in expenses
+            if _coerce_utc(item.occurred_at).date() >= start_of_month
+        )
+        monthly_spends.append(spend)
+        monthly_budgets.append(p.monthly_budget)
+        if p.id == participant_id:
+            user_spend = spend
+
+    user_budget = participant.monthly_budget
+    user_usage = (user_spend / user_budget * 100) if user_budget > 0 else 0
+    budget_usages = [
+        (s / b * 100) if b > 0 else 0
+        for s, b in zip(monthly_spends, monthly_budgets)
+    ]
+
+    comparisons: list[PeerComparisonItem] = []
+
+    # Monthly spend comparison
+    avg_spend = sum(monthly_spends) / len(monthly_spends)
+    spend_percentile = int(sum(1 for s in monthly_spends if s <= user_spend) / len(monthly_spends) * 100)
+    diff_pct = int(((user_spend - avg_spend) / avg_spend) * 100) if avg_spend > 0 else 0
+    interp = f"You spend {abs(diff_pct)}% {'more' if diff_pct > 0 else 'less'} than the average participant this month."
+    comparisons.append(PeerComparisonItem(
+        metric="Monthly Spend", your_value=round(user_spend, 0),
+        peer_avg=round(avg_spend, 0), percentile=spend_percentile, interpretation=interp,
+    ))
+
+    # Budget usage comparison
+    avg_usage = sum(budget_usages) / len(budget_usages)
+    usage_percentile = int(sum(1 for u in budget_usages if u <= user_usage) / len(budget_usages) * 100)
+    comparisons.append(PeerComparisonItem(
+        metric="Budget Usage %", your_value=round(user_usage, 1),
+        peer_avg=round(avg_usage, 1), percentile=usage_percentile,
+        interpretation=f"Your budget usage is in the {_ordinal(usage_percentile)} percentile.",
+    ))
+
+    # Daily burn comparison
+    cutoff_14 = datetime.now(UTC) - timedelta(days=14)
+    daily_burns: list[float] = []
+    user_burn = 0.0
+    for p in all_participants:
+        recent = session.exec(
+            select(ExpenseEntry)
+            .where(ExpenseEntry.participant_id == p.id)
+            .where(ExpenseEntry.occurred_at >= cutoff_14)
+        ).all()
+        burn = sum(item.amount for item in recent) / 14
+        daily_burns.append(burn)
+        if p.id == participant_id:
+            user_burn = burn
+
+    avg_burn = sum(daily_burns) / len(daily_burns)
+    burn_percentile = int(sum(1 for b in daily_burns if b <= user_burn) / len(daily_burns) * 100)
+    comparisons.append(PeerComparisonItem(
+        metric="Daily Burn Rate", your_value=round(user_burn, 0),
+        peer_avg=round(avg_burn, 0), percentile=burn_percentile,
+        interpretation=f"Your daily burn is in the {_ordinal(burn_percentile)} percentile among peers.",
+    ))
+
+    return PeerComparisonResponse(peer_count=peer_count, comparisons=comparisons)
+
+
+def _ordinal(n: int) -> str:
+    if 11 <= (n % 100) <= 13:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
+# ---------------------------------------------------------------------------
+# Semester planner
+# ---------------------------------------------------------------------------
+
+def get_semester_projection(
+    session: Session, participant_id: str, months: int = 4
+) -> SemesterProjectionResponse:
+    """Projects balance over a multi-month horizon."""
+    participant = session.get(Participant, participant_id)
+    if participant is None:
+        raise ValueError("Participant not found")
+
+    dashboard = build_dashboard(session, participant_id)
+    current_balance = dashboard.current_balance
+    daily_spend = dashboard.average_daily_spend_14d
+    monthly_burn = round(daily_spend * 30, 2)
+
+    today = date.today()
+    points: list[SemesterProjectionPoint] = []
+    bal = current_balance
+    for i in range(months * 30 + 1):
+        d = today + timedelta(days=i)
+        if i % 7 == 0:  # weekly points
+            points.append(SemesterProjectionPoint(date=d.isoformat(), projected_balance=round(bal, 2)))
+        bal -= daily_spend
+        # Add monthly income
+        if i > 0 and (today + timedelta(days=i)).day == 1:
+            bal += participant.monthly_income
+
+    projected_end_balance = round(current_balance - (monthly_burn * months) + (participant.monthly_income * months), 2)
+
+    recommendations: list[str] = []
+    if projected_end_balance < 0:
+        deficit = abs(projected_end_balance)
+        monthly_cut = round(deficit / months, 0)
+        recommendations.append(f"At this pace you'll be Rs {deficit:.0f} short by semester end. Cutting Rs {monthly_cut:.0f}/month would close the gap.")
+    if daily_spend > 0 and participant.monthly_budget > 0:
+        target_daily = participant.monthly_budget / 30
+        if daily_spend > target_daily * 1.1:
+            recommendations.append(f"Your daily burn (Rs {daily_spend:.0f}) exceeds your budget target (Rs {target_daily:.0f}/day). Try the what-if simulator to find comfortable cuts.")
+    if participant.monthly_income > 0 and monthly_burn > participant.monthly_income:
+        recommendations.append(f"You're spending Rs {monthly_burn - participant.monthly_income:.0f} more per month than you earn. Consider a side gig or reducing non-essentials.")
+    if not recommendations:
+        recommendations.append("You're on track! Keep maintaining your current spending habits.")
+
+    return SemesterProjectionResponse(
+        current_balance=current_balance,
+        projected_end_balance=projected_end_balance,
+        monthly_burn=monthly_burn,
+        months_remaining=months,
+        projection_points=points,
+        recommendations=recommendations,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Gamification helpers
+# ---------------------------------------------------------------------------
+
+def compute_no_spend_streak(session: Session, participant_id: str) -> int:
+    """Count consecutive days from today with zero expenses."""
+    today = date.today()
+    streak = 0
+    for i in range(60):
+        d = today - timedelta(days=i)
+        count = session.exec(
+            select(func.count(ExpenseEntry.id))
+            .where(ExpenseEntry.participant_id == participant_id)
+            .where(func.date(ExpenseEntry.occurred_at) == d)
+        ).one()
+        if count == 0 and i > 0:
+            streak += 1
+        elif count > 0 and i > 0:
+            break
+    return streak
+
+
+def compute_under_budget_days(session: Session, participant_id: str) -> int:
+    """Count consecutive days the user spent less than budget/30."""
+    participant = session.get(Participant, participant_id)
+    if participant is None or participant.monthly_budget <= 0:
+        return 0
+    daily_target = participant.monthly_budget / 30
+    today = date.today()
+    streak = 0
+    for i in range(1, 60):
+        d = today - timedelta(days=i)
+        expenses = session.exec(
+            select(ExpenseEntry)
+            .where(ExpenseEntry.participant_id == participant_id)
+            .where(func.date(ExpenseEntry.occurred_at) == d)
+        ).all()
+        day_total = sum(e.amount for e in expenses)
+        if day_total <= daily_target:
+            streak += 1
+        else:
+            break
+    return streak

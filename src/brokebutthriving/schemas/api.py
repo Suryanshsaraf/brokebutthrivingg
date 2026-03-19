@@ -6,9 +6,11 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from brokebutthriving.models.entities import (
     CashflowCategory,
+    ChallengeStatus,
     DietPreference,
     ExpenseCategory,
     LivingSituation,
+    RecurrenceFrequency,
 )
 
 
@@ -127,6 +129,11 @@ class DashboardSummary(BaseModel):
     risk_band: str
     top_categories: list[CategoryBreakdown]
     highlight_messages: list[str]
+    # Budget tracking (new)
+    monthly_budget: float = 0
+    budget_used_pct: float = 0
+    budget_remaining: float = 0
+    budget_status: str = "on_track"
 
 
 class SimulationRequest(BaseModel):
@@ -158,6 +165,148 @@ class DailyDatasetRecord(BaseModel):
     spend_next_7d: float
     primary_archetype: str | None
 
+
+# ---------------------------------------------------------------------------
+# Alerts
+# ---------------------------------------------------------------------------
+
+class AlertItem(BaseModel):
+    id: str
+    severity: str  # "critical" | "warning" | "info" | "success"
+    icon: str
+    title: str
+    message: str
+
+
+# ---------------------------------------------------------------------------
+# Spending Trends
+# ---------------------------------------------------------------------------
+
+class DailySpendPoint(BaseModel):
+    date: str
+    amount: float
+
+
+class SpendingTrendsResponse(BaseModel):
+    daily_spend: list[DailySpendPoint]
+    weekly_totals: list[DailySpendPoint]
+    category_totals: list[CategoryBreakdown]
+    income_vs_expense: list[dict[str, float | str]]
+
+
+# ---------------------------------------------------------------------------
+# Peer comparison
+# ---------------------------------------------------------------------------
+
+class PeerComparisonItem(BaseModel):
+    metric: str
+    your_value: float
+    peer_avg: float
+    percentile: int
+    interpretation: str
+
+
+class PeerComparisonResponse(BaseModel):
+    peer_count: int
+    comparisons: list[PeerComparisonItem]
+
+
+# ---------------------------------------------------------------------------
+# Recurring entries
+# ---------------------------------------------------------------------------
+
+class RecurringEntryCreate(BaseModel):
+    amount: float = Field(gt=0)
+    category: ExpenseCategory = ExpenseCategory.OTHER
+    merchant: str | None = Field(default=None, max_length=120)
+    note: str | None = Field(default=None, max_length=240)
+    frequency: RecurrenceFrequency = RecurrenceFrequency.MONTHLY
+    is_expense: bool = True
+    next_due: date
+
+
+class RecurringEntryRead(RecurringEntryCreate):
+    id: str
+    participant_id: str
+    is_active: bool
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ---------------------------------------------------------------------------
+# Gamification
+# ---------------------------------------------------------------------------
+
+class ChallengeRead(BaseModel):
+    id: str
+    participant_id: str
+    title: str
+    description: str
+    challenge_type: str
+    target_value: float
+    current_value: float
+    progress_pct: float
+    status: ChallengeStatus
+    start_date: date
+    end_date: date | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AchievementRead(BaseModel):
+    id: str
+    badge_id: str
+    title: str
+    description: str
+    icon: str
+    earned_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class GamificationSummary(BaseModel):
+    active_challenges: list[ChallengeRead]
+    achievements: list[AchievementRead]
+    no_spend_streak: int
+    under_budget_days: int
+
+
+# ---------------------------------------------------------------------------
+# Semester planner
+# ---------------------------------------------------------------------------
+
+class SemesterProjectionPoint(BaseModel):
+    date: str
+    projected_balance: float
+
+
+class SemesterProjectionResponse(BaseModel):
+    current_balance: float
+    projected_end_balance: float
+    monthly_burn: float
+    months_remaining: int
+    projection_points: list[SemesterProjectionPoint]
+    recommendations: list[str]
+
+
+# ---------------------------------------------------------------------------
+# SMS import
+# ---------------------------------------------------------------------------
+
+class SmsImportRequest(BaseModel):
+    sms_text: str = Field(min_length=5, max_length=5000)
+
+
+class SmsImportResponse(BaseModel):
+    parsed_count: int
+    expenses: list[ExpenseEntryRead]
+    errors: list[str]
+
+
+# ---------------------------------------------------------------------------
+# Model registry
+# ---------------------------------------------------------------------------
 
 class ModelMetricSummary(BaseModel):
     model_id: str
@@ -215,3 +364,24 @@ class ModelRegistrySummary(BaseModel):
     note: str
     missing_artifacts: list[str]
     tasks: list[TrainedModelTask]
+
+
+# ---------------------------------------------------------------------------
+# Chat
+# ---------------------------------------------------------------------------
+
+class ChatMessage(BaseModel):
+    role: str = Field(description="Either 'user' or 'assistant'.")
+    content: str
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=2000)
+    history: list[ChatMessage] = Field(default_factory=list)
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    tools_used: list[str] = Field(default_factory=list)
+
+
