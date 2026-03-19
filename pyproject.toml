@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "brokebutthriving"
+version = "0.1.0"
+description = "Student finance copilot with real data collection and multi-task sequence modeling."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.34,<1",
+  "sqlmodel>=0.0.22,<1",
+  "pydantic-settings>=2.7,<3",
+  "python-dateutil>=2.9,<3",
+  "pandas>=2.2,<3",
+  "numpy>=2.1,<3",
+  "scikit-learn>=1.5,<2",
+  "requests>=2.32,<3",
+  "torch>=2.6,<3",
+  "openai>=1.0,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.28,<1",
+  "pytest>=8.3,<9",
+  "ruff>=0.11,<1",
+]
+
+[project.scripts]
+bbt-api = "brokebutthriving.api.main:run"
+bbt-build-public-benchmarks = "brokebutthriving.ml.build_public_benchmark:main"
+bbt-build-bls-spend-sequences = "brokebutthriving.ml.build_bls_spend_sequences:main"
+bbt-export = "brokebutthriving.ml.export:main"
+bbt-fetch-public-data = "brokebutthriving.ml.public_data:main"
+bbt-ingest-bls-cex = "brokebutthriving.ml.ingest_bls_cex:main"
+bbt-ingest-fwb = "brokebutthriving.ml.ingest_fwb:main"
+bbt-ingest-mem = "brokebutthriving.ml.ingest_mem:main"
+bbt-ingest-shed = "brokebutthriving.ml.ingest_shed:main"
+bbt-train-spend-sequences = "brokebutthriving.ml.train_spend_sequences:main"
+bbt-train-public-benchmarks = "brokebutthriving.ml.train_public_benchmarks:main"
+bbt-train = "brokebutthriving.ml.train:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

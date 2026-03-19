@@ -1,0 +1,30 @@
+.floating-emojis-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none; /* Ignore clicks */
+  z-index: 0;
+}
+
+.floating-emoji {
+  position: absolute;
+  bottom: -50px; /* Start slightly below screen */
+  opacity: 0.4; /* More visible as requested */
+  animation-name: floatUp;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  user-select: none;
+  filter: none; /* Full color for better visibility */
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  100% {
+    transform: translateY(-110vh) rotate(360deg);
+  }
+}
