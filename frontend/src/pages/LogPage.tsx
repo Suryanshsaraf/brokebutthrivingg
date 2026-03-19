@@ -29,11 +29,13 @@ export default function LogPage({ participantId }: Props) {
   const [expCategory, setExpCategory] = useState<ExpenseCategory>('food');
   const [expMerchant, setExpMerchant] = useState('');
   const [expNote, setExpNote] = useState('');
+  const [expDate, setExpDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Cashflow form
   const [cfAmount, setCfAmount] = useState('');
   const [cfCategory, setCfCategory] = useState<CashflowCategory>('allowance');
   const [cfNote, setCfNote] = useState('');
+  const [cfDate, setCfDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Check-in form
   const [ciDate, setCiDate] = useState(new Date().toISOString().split('T')[0]);
@@ -64,7 +66,7 @@ export default function LogPage({ participantId }: Props) {
     e.preventDefault();
     try {
       await createExpense(participantId, {
-        occurred_at: new Date().toISOString(),
+        occurred_at: new Date(expDate).toISOString(),
         amount: Number(expAmount),
         category: expCategory,
         merchant: expMerchant || undefined,
@@ -80,7 +82,7 @@ export default function LogPage({ participantId }: Props) {
     e.preventDefault();
     try {
       await createCashflow(participantId, {
-        occurred_at: new Date().toISOString(),
+        occurred_at: new Date(cfDate).toISOString(),
         amount: Number(cfAmount),
         category: cfCategory,
         note: cfNote || undefined,
@@ -184,6 +186,10 @@ export default function LogPage({ participantId }: Props) {
           <h3 style={{ marginBottom: 20 }}>Log an Expense</h3>
           <form className="form-grid" onSubmit={handleExpense}>
             <div className="form-group">
+              <label className="form-label">Date</label>
+              <input className="form-input" type="date" value={expDate} onChange={(e) => setExpDate(e.target.value)} />
+            </div>
+            <div className="form-group">
               <label className="form-label">Amount (₹)</label>
               <input className="form-input" type="number" min="1" step="1" required
                 value={expAmount} onChange={(e) => setExpAmount(e.target.value)}
@@ -217,6 +223,10 @@ export default function LogPage({ participantId }: Props) {
         <div className="glass-panel">
           <h3 style={{ marginBottom: 20 }}>Log Income</h3>
           <form className="form-grid" onSubmit={handleCashflow}>
+            <div className="form-group">
+              <label className="form-label">Date</label>
+              <input className="form-input" type="date" value={cfDate} onChange={(e) => setCfDate(e.target.value)} />
+            </div>
             <div className="form-group">
               <label className="form-label">Amount (₹)</label>
               <input className="form-input" type="number" min="1" step="1" required
