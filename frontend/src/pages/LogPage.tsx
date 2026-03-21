@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ExpenseCategory, CashflowCategory, DailyCheckInCreate } from '../types/api';
+import type { ExpenseCategory, CashflowCategory } from '../types/api';
 import {
   createExpense, createCashflow, createCheckin, importSms,
 } from '../lib/api';

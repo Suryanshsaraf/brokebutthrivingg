@@ -8,6 +8,7 @@ import ChatPage from './pages/ChatPage';
 import SettingsPage from './pages/SettingsPage';
 import OnboardingPage from './pages/OnboardingPage';
 import FloatingEmojis from './components/FloatingEmojis/FloatingEmojis';
+import ThrillingExperience from './components/ThrillingExperience/ThrillingExperience';
 import Dock from './components/Dock/Dock';
 import './index.css';
 
@@ -31,6 +32,7 @@ export default function App() {
   const [page, setPage] = useState<PageId>('dashboard');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showParticipantOverlay, setShowParticipantOverlay] = useState(false);
+  const [hasSeenExperience, setHasSeenExperience] = useState(() => localStorage.getItem('bbt_seen_thrill') === 'true');
 
   useEffect(() => {
     listParticipants()
@@ -54,6 +56,17 @@ export default function App() {
     listParticipants().then(setParticipants);
   };
 
+  // 1. Initial Thrilling Experience
+  if (!hasSeenExperience) {
+    return (
+      <ThrillingExperience onComplete={() => {
+        localStorage.setItem('bbt_seen_thrill', 'true');
+        setHasSeenExperience(true);
+      }} />
+    );
+  }
+
+  // 2. Onboarding Flow
   if (showOnboarding) {
     return (
       <>

@@ -32,7 +32,7 @@ function StarPicker({ value, onChange }: { value: number; onChange: (v: number) 
 }
 
 export default function SettingsPage({ participantId }: Props) {
-  const [tab, setTab] = useState<'recurring' | 'simulation' | 'export' | 'survey' | 'allocations'>('recurring');
+  const [tab, setTab] = useState<'recurring' | 'simulation' | 'export' | 'survey' | 'allocations' | 'system'>('recurring');
   const [status, setStatus] = useState('');
 
   // Allocations
@@ -199,6 +199,7 @@ export default function SettingsPage({ participantId }: Props) {
           { id: 'export' as const, label: '📥 Export' },
           { id: 'survey' as const, label: '📋 Survey' },
           { id: 'allocations' as const, label: '💰 Budget Planning' },
+          { id: 'system' as const, label: '⚙️ App System' },
         ].map((t) => (
           <button key={t.id} className={`btn ${tab === t.id ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setTab(t.id)} type="button">
@@ -449,6 +450,27 @@ export default function SettingsPage({ participantId }: Props) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* SYSTEM */}
+      {tab === 'system' && (
+        <div className="glass-panel" style={{ textAlign: 'center', padding: 48 }}>
+          <p style={{ fontSize: 48, marginBottom: 16 }}>🚀</p>
+          <h3 style={{ marginBottom: 12 }}>App Experience</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 24, maxWidth: 500, marginInline: 'auto' }}>
+            The "Thrilling Experience" (intro scroll) is designed to be seen only once. 
+            If you'd like to experience it again, use the button below.
+          </p>
+          <button 
+            className="btn btn-primary" 
+            onClick={() => {
+              localStorage.removeItem('bbt_seen_thrill');
+              window.location.reload();
+            }}
+          >
+            Replay Intro Animation
+          </button>
         </div>
       )}
     </div>

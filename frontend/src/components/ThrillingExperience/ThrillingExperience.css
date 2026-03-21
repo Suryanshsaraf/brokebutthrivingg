@@ -1,0 +1,186 @@
+.thrilling-experience-wrapper {
+  position: relative;
+  width: 100%;
+  height: 400vh; /* Extremely tall to allow a long scroll through phases */
+  background-color: #1a141b;
+  overflow: visible; /* changed from hidden to ensure no clipping */
+  border-top: 1px solid rgba(255,255,255,0.05);
+  color: #ffffff; /* FORCE WHITE BASE */
+}
+
+.sticky-viewport {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.hud-container {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* Let clicks pass through to particles if needed */
+}
+
+.hud-phase {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 800px;
+  padding: 40px;
+  pointer-events: none; /* default none unless active */
+  opacity: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, calc(-50% + 20px)) scale(0.95);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.hud-phase.active-phase {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.phase-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  margin-bottom: 20px;
+  color: #ffffff; /* ABSOLUTE WHITE */
+}
+
+.flashy-brand-text {
+  font-size: 5rem !important;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #ffffff, #b796ac, #5cd6a0, #ffffff);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: flashyShine 3s linear infinite, flashyPulse 1.5s ease-in-out infinite alternate;
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.3);
+  filter: drop-shadow(0 0 10px rgba(92, 214, 160, 0.5));
+}
+
+@keyframes flashyShine {
+  to { background-position: 300% center; }
+}
+
+@keyframes flashyPulse {
+  from { transform: scale(1); filter: brightness(1); }
+  to { transform: scale(1.05); filter: brightness(1.3); }
+}
+
+.phase-subtitle {
+  font-size: 1.5rem;
+  opacity: 0.8;
+  color: #eeeeee; /* NEAR WHITE */
+}
+
+.subtle {
+  color: #b796ac;
+  text-shadow: 0 0 20px rgba(183, 150, 172, 0.4);
+}
+
+.alert-red {
+  color: #ffffff; /* Change text color to white on red backgrounds */
+}
+
+.success-green {
+  color: #ffffff;
+}
+
+/* Intelligence Phase Typography */
+.agent-text-box {
+  margin-bottom: 40px;
+  padding: 20px 40px;
+  /* Removed border and background for a minimal floating look */
+}
+
+.scramble-text {
+  font-family: monospace;
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+}
+
+/* Mirror Effect */
+.mirror-effect {
+  margin-top: 60px;
+}
+
+.glitch-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 40px;
+  border: 2px dashed #f5695b;
+  position: relative;
+  /* simple CSS glitch */
+  animation: boxGlitch 0.2s infinite;
+}
+
+.glitch-box .label {
+  font-family: monospace;
+  font-size: 1rem;
+  color: #c9ada7;
+}
+
+.glitch-box .value {
+  font-size: 4rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+@keyframes boxGlitch {
+  0% { transform: translate(0, 0) }
+  20% { transform: translate(-2px, 1px) }
+  40% { transform: translate(1px, -2px) }
+  60% { transform: translate(-1px, 2px) }
+  80% { transform: translate(2px, -1px) }
+  100% { transform: translate(0, 0) }
+}
+
+/* Harsh Timer */
+.countdown-container h3 {
+  font-family: monospace;
+  font-size: 1.5rem;
+  color: #c9ada7;
+  margin-bottom: 10px;
+}
+
+.harsh-timer {
+  font-family: monospace;
+  font-size: 8rem;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.2);
+}
+
+/* Fake Toast Alerts */
+.fake-toast {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  background: rgba(245, 105, 91, 0.9);
+  color: white;
+  padding: 16px 24px;
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 1.2rem;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(245, 105, 91, 0.5);
+  pointer-events: none;
+}

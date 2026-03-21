@@ -84,7 +84,7 @@ export default function InsightsPage({ participantId }: Props) {
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={4}
                   tickFormatter={(v: string) => v.slice(5)} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `₹${v}`} />
-                <Tooltip formatter={(v: number) => [`₹${v.toFixed(0)}`, 'Spend']}
+                <Tooltip formatter={(v: any) => [`₹${Number(v).toFixed(0)}`, 'Spend']}
                   contentStyle={{ background: 'rgba(20,20,40,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10 }} />
                 <Area type="monotone" dataKey="amount" stroke="#5b9cf5" strokeWidth={2}
                   fill="url(#spendGrad)" />
@@ -105,7 +105,7 @@ export default function InsightsPage({ participantId }: Props) {
                       <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v: number) => `₹${v.toFixed(0)}`}
+                  <Tooltip formatter={(v: any) => `₹${Number(v).toFixed(0)}`}
                     contentStyle={{ background: 'rgba(20,20,40,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10 }} />
                   <Legend formatter={(value: string) => <span style={{ color: 'var(--text-secondary)', textTransform: 'capitalize', fontSize: 12 }}>{value}</span>} />
                 </PieChart>
@@ -122,7 +122,7 @@ export default function InsightsPage({ participantId }: Props) {
                     tickFormatter={(v: string) => v.slice(5)} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `₹${v}`} />
                   <Tooltip contentStyle={{ background: 'rgba(20,20,40,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10 }}
-                    formatter={(v: number) => `₹${v.toFixed(0)}`} />
+                    formatter={(v: any) => `₹${Number(v).toFixed(0)}`} />
                   <Bar dataKey="income" fill="#5cd6a0" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="expense" fill="#f5695b" radius={[4, 4, 0, 0]} />
                   <Legend formatter={(value: string) => <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{value}</span>} />
@@ -145,7 +145,7 @@ export default function InsightsPage({ participantId }: Props) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(v: string) => `W ${v.slice(5)}`} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `₹${v}`} />
-                <Tooltip formatter={(v: number) => [`₹${v.toFixed(0)}`, 'Total']}
+                <Tooltip formatter={(v: any) => [`₹${Number(v).toFixed(0)}`, 'Total']}
                   contentStyle={{ background: 'rgba(20,20,40,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10 }} />
                 <Bar dataKey="amount" fill="url(#weekGrad)" radius={[6, 6, 0, 0]} />
               </BarChart>
@@ -236,7 +236,7 @@ export default function InsightsPage({ participantId }: Props) {
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={3}
                   tickFormatter={(v: string) => v.slice(5)} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `₹${v}`} />
-                <Tooltip formatter={(v: number) => [`₹${v.toFixed(0)}`, 'Balance']}
+                <Tooltip formatter={(v: any) => [`₹${Number(v).toFixed(0)}`, 'Balance']}
                   contentStyle={{ background: 'rgba(20,20,40,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10 }} />
                 <Area type="monotone" dataKey="projected_balance"
                   stroke={semester.projected_end_balance >= 0 ? '#5cd6a0' : '#f5695b'}
