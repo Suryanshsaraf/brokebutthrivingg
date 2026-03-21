@@ -1,0 +1,16 @@
+fastapi<1,>=0.115
+uvicorn[standard]<1,>=0.34
+sqlmodel<1,>=0.0.22
+pydantic-settings<3,>=2.7
+python-dateutil<3,>=2.9
+pandas<3,>=2.2
+numpy<3,>=2.1
+scikit-learn<2,>=1.5
+requests<3,>=2.32
+torch<3,>=2.6
+openai<2,>=1.0
+
+[dev]
+httpx<1,>=0.28
+pytest<9,>=8.3
+ruff<1,>=0.11
